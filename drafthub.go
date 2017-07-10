@@ -2,7 +2,14 @@ package main
 
 import (
   "fmt"
+  "encoding/json"
+  "log"
 )
+
+type Response struct {
+  MessageType string
+  Body map[string]interface{}
+}
 
 // draft hub maintains the set of active clients and broadcasts messages to the
 // clients.
@@ -66,9 +73,16 @@ func (h *DraftHub) run() {
       switch t := messageJson.MessageType; t {
     	case "newBidder":
         fmt.Println("new bidder")
-    	case "chat":
+    	case "chatMessage":
         body := messageJson.Body
-        broadcastMessage(h, []byte(body["message"].(string)))
+
+        response := Response{"CHAT_MESSAGE", body}
+        response_json, err := json.Marshal(response)
+        if err != nil {
+    			log.Printf("error: %v", err)
+    			break
+        }
+        broadcastMessage(h, []byte(response_json))
     	default:
     		// freebsd, openbsd,
     		// plan9, windows...
