@@ -140,6 +140,7 @@ func (c *Subscriber) writePump() {
 
 // serveWs handles websocket requests from the peer.
 func serveWs(hub *DraftHub, w http.ResponseWriter, r *http.Request) {
+	log.Println("Serve WS")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)

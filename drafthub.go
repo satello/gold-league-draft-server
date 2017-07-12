@@ -49,9 +49,11 @@ func (h *DraftHub) run() {
 		select {
 
 		case client := <-h.register:
+      log.Println("CONNECTING CLIENT")
 			h.clients[client] = true
 
 		case client := <-h.unregister:
+      log.Println("DISCONNECTING CLIENT")
 			if _, ok := h.clients[client]; ok {
         delete(h.bidders, client.bidderId)
 				delete(h.clients, client)

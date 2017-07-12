@@ -57,6 +57,7 @@ func createBidder(name string, cap int, spots int, s *Subscriber, h *DraftHub) {
 }
 
 func authorizeBidder(token string, s *Subscriber, h *DraftHub) {
+  log.Println("AUTHORIZE BIDDER")
   b := h.bidders[token]
   if b != nil {
     response := Response{"TOKEN_VALID", nil}
@@ -91,6 +92,7 @@ func deactivateBidder(token string, s *Subscriber, h *DraftHub) {
 }
 
 func getBidders(s *Subscriber, h *DraftHub) {
+  log.Printf("GET BIDDERS")
   var bidderSlice []*Bidder
   for _, v := range h.bidders {
     bidderSlice = append(bidderSlice, v)

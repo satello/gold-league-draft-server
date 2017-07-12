@@ -2,13 +2,13 @@ package main
 
 type Player struct {
   // player name
-	name string
+	Name string
 
   // player position
-	position string
+	Position string
 
   // current bid
-  bid int
+  Bid int
 
   // bid owner
   bidder Bidder
@@ -16,15 +16,15 @@ type Player struct {
 
 func newPlayer(name string, position string) *Player {
   return &Player{
-    name:     name,
-    position: position,
-    bid:      0,
+    Name:     name,
+    Position: position,
+    Bid:      0,
   }
 }
 
 func (p *Player) submitBid(bid int, bidder Bidder) bool {
-  if bid > p.bid && p.bidder != bidder {
-    p.bid = bid
+  if bid > p.Bid && p.bidder != bidder {
+    p.Bid = bid
     p.bidder = bidder
     return true
   } else {
