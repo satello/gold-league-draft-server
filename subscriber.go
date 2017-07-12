@@ -10,13 +10,6 @@ import (
   "fmt"
 )
 
-type Message struct {
-    MessageType string
-    BidderId string
-    Body map[string]interface{}
-    Subscriber *Subscriber
-}
-
 const (
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
@@ -53,6 +46,9 @@ type Subscriber struct {
 
 	// Buffered channel of outbound messages.
 	send chan []byte
+
+	// BidderId of the bidder using connection
+	bidderId string
 }
 
 // readPump pumps messages from the websocket connection to the hub.
