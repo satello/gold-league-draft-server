@@ -30,9 +30,16 @@ type DraftHub struct {
 
   // bidders in the draft
   bidders map[string]*Bidder
+
+  rules *Rules
 }
 
-func newDraft() *DraftHub {
+func newDraft(rules *Rules, bidders []*Bidder, players []*Player) *DraftHub {
+  bidder_map := make(map[string]*Bidder)
+  for i := range bidders {
+    bidder_map[bidders[i].bidderId] = bidders[i]
+  }
+
 	return &DraftHub{
 		broadcast:      make(chan []byte),
 		register:       make(chan *Subscriber),
@@ -40,7 +47,8 @@ func newDraft() *DraftHub {
     acceptMessage:  make(chan *Message),
 		clients:        make(map[*Subscriber]bool),
     players:        make(map[string]*Player),
-    bidders:        make(map[string]*Bidder),
+    bidders:        bidder_map,
+    rules:          rules,
 	}
 }
 

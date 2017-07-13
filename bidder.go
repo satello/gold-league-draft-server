@@ -3,7 +3,6 @@ package main
 import (
   "encoding/json"
   "log"
-  "os/exec"
 )
 
 type Bidder struct {
@@ -15,6 +14,9 @@ type Bidder struct {
 
   // roster spots
   Spots int   `json:"spots"`
+
+  // bidder uuid
+  bidderId string
 }
 
 func newBidder(name string, cap int, spots int) *Bidder {
@@ -25,21 +27,12 @@ func newBidder(name string, cap int, spots int) *Bidder {
   }
 }
 
-func createBidderId() string {
-  // return UUID
-  out, err := exec.Command("uuidgen").Output()
-  if err != nil {
-      log.Fatal(err)
-  }
-  return string(out[:])
-}
-
 func createBidder(name string, cap int, spots int, s *Subscriber, h *DraftHub) {
   log.Println("NEW BIDDER")
   new_bidder := newBidder(name, cap, spots)
 
   // create token for bidder. use token as key
-  token := createBidderId()
+  token := createUuid()
   h.bidders[token] = new_bidder
 
   token_json := map[string]interface{}{"token": token}
