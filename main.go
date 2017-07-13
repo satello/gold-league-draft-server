@@ -45,14 +45,25 @@ func main() {
 	// must POST to this route with rules, bidders and players
 	router.POST("/new-room", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		// parse JSON body
-		log.Println(r.Body)
-		decoder := json.NewDecoder(r.Body)
 		var body Room
-		err := decoder.Decode(&body)
-		log.Println(body)
-		if err != nil {
-			log.Println(err)
-		}
+    if r.Body == nil {
+        http.Error(w, "Please send a request body", 400)
+        return
+    }
+    err := json.NewDecoder(r.Body).Decode(&body)
+    if err != nil {
+        http.Error(w, err.Error(), 400)
+        return
+    }
+    fmt.Println(len(body.Bidders))
+		// decoder := json.NewDecoder(r.Body)
+		// var body *Room
+		// err := decoder.Decode(body)
+		// log.Println(body.Rules)
+		// if err != nil {
+		// 	log.Println(err)
+		// 	return
+		// }
 		// spin up new draft hub
 		roomId := newRoom(trumpTower, body.Rules, body.Bidders, body.Players)
 		// return room id

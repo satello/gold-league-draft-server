@@ -26,6 +26,7 @@ type Room struct {
 
 func newRoom(t *Tower, rules *Rules, bidders []*Bidder, players []*Player) string {
   log.Println("starting new room")
+  log.Println(len(bidders))
   roomId := createUuid()
   newDraftRoom := newDraft(rules, bidders, players)
 
