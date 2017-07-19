@@ -17,19 +17,17 @@ func newTower() *Tower {
 type Room struct {
   RoomId string `json:"roomId"`
 
-  Rules *Rules `json:"rules"`
-
   Bidders []*Bidder `json:"bidders"`
 
   Players []*Player `json:"players"`
 }
 
-func newRoom(t *Tower, rules *Rules, bidders []*Bidder, players []*Player) string {
+func newRoom(t *Tower, bidders []*Bidder, players []*Player) string {
   log.Println("starting new room")
   log.Printf("number of bidders %d", len(bidders))
   log.Println(bidders)
   roomId := createUuid()
-  newDraftRoom := newDraft(rules, bidders, players)
+  newDraftRoom := newDraft(bidders, players)
 
   // start new hub
   go newDraftRoom.run()

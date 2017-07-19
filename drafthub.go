@@ -31,14 +31,11 @@ type DraftHub struct {
   // bidders in the draft
   bidders map[string]*Bidder
 
-  // draft rules
-  rules *Rules
-
   // flag to set when you want to close draft room
   isActive bool
 }
 
-func newDraft(rules *Rules, bidders []*Bidder, players []*Player) *DraftHub {
+func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
   bidder_map := make(map[string]*Bidder)
   for _, v := range bidders {
     log.Printf("%s", v.BidderId)
@@ -53,7 +50,6 @@ func newDraft(rules *Rules, bidders []*Bidder, players []*Player) *DraftHub {
 		clients:        make(map[*Subscriber]bool),
     players:        make(map[string]*Player),
     bidders:        bidder_map,
-    rules:          rules,
     isActive:       true,
 	}
 }
@@ -69,21 +65,27 @@ func (h *DraftHub) run() {
 		case client := <-h.unregister:
       log.Println("DISCONNECTING CLIENT")
 			if _, ok := h.clients[client]; ok {
-        delete(h.bidders, client.bidderId)
+        // mark bidder as inactive
+        b := h.bidders[client.bidderId]
+        if b != nil {
+          b.ActiveConnection = false
+        }
+        // remove client
 				delete(h.clients, client)
+        // close clinet
 				close(client.send)
 			}
 
 		case messageJson := <-h.acceptMessage:
       switch t := messageJson.MessageType; t {
 
-    	case "newBidder":
-        var body NewBidderBody
-        mapstructure.Decode(messageJson.Body, &body)
-        name := body.Name
-        cap := body.Cap
-        spots := body.Spots
-        createBidder(name, cap, spots, messageJson.Subscriber, h)
+    	// case "newBidder":
+      //   var body NewBidderBody
+      //   mapstructure.Decode(messageJson.Body, &body)
+      //   name := body.Name
+      //   cap := body.Cap
+      //   spots := body.Spots
+      //   createBidder(name, cap, spots, messageJson.Subscriber, h)
 
       case "authorizeBidder":
         var body TokenBody
@@ -101,6 +103,9 @@ func (h *DraftHub) run() {
 
       case "getBidders":
         getBidders(messageJson.Subscriber, h)
+
+      case "getPlayers":
+        getPlayers(messageJson.Subscriber, h)
 
     	case "chatMessage":
         log.Printf("CHAT MESSAGE");

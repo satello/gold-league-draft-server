@@ -17,6 +17,9 @@ type Bidder struct {
 
   // bidder uuid
   BidderId string `json:"bidderId"`
+
+  // has an active websocket connection
+  ActiveConnection bool `json:"activeConnection"`
 }
 
 func newBidder(name string, cap int, spots int) *Bidder {
@@ -53,16 +56,30 @@ func authorizeBidder(token string, s *Subscriber, h *DraftHub) {
   log.Println("AUTHORIZE BIDDER")
   b := h.bidders[token]
   if b != nil {
-    response := Response{"TOKEN_VALID", nil}
-    response_json, err := json.Marshal(response)
-    if err != nil {
-      log.Printf("error: %v", err)
-      return
+    // bidder does not have an active connection
+    if !b.ActiveConnection {
+      response := Response{"TOKEN_VALID", nil}
+      response_json, err := json.Marshal(response)
+      if err != nil {
+        log.Printf("error: %v", err)
+        return
+      }
+      log.Println(string(response_json))
+      // attach bidderId to connection
+      s.bidderId = token
+      // mark connection as active
+      b.ActiveConnection = true
+      sendMessageToSubscriber(h, s, response_json)
+    } else {
+      response := Response{"DUPLICATE_CONNECTION", nil}
+      response_json, err := json.Marshal(response)
+      if err != nil {
+        log.Printf("error: %v", err)
+        return
+      }
+      log.Println(string(response_json))
+      sendMessageToSubscriber(h, s, response_json)
     }
-    log.Println(string(response_json))
-    // attach bidderId to connection
-    s.bidderId = token
-    sendMessageToSubscriber(h, s, response_json)
   } else {
     response := Response{"INVALID_TOKEN", nil}
     response_json, err := json.Marshal(response)

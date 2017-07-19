@@ -1,5 +1,6 @@
 package main
 
+// WS MESSGES FROM FRONT END
 type Message struct {
     MessageType string
     BidderId string
