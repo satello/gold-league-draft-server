@@ -36,7 +36,7 @@ func createBidder(name string, cap int, spots int, s *Subscriber, h *DraftHub) {
 
   // create token for bidder. use token as key
   token := createUuid()
-  h.bidders[token] = new_bidder
+  h.biddersMap[token] = new_bidder
 
   token_json := map[string]interface{}{"token": token}
   response := Response{"NEW_TOKEN", token_json}
@@ -54,7 +54,7 @@ func createBidder(name string, cap int, spots int, s *Subscriber, h *DraftHub) {
 
 func authorizeBidder(token string, s *Subscriber, h *DraftHub) {
   log.Println("AUTHORIZE BIDDER")
-  b := h.bidders[token]
+  b := h.biddersMap[token]
   if b != nil {
     // bidder does not have an active connection
     if !b.ActiveConnection {
@@ -94,8 +94,8 @@ func authorizeBidder(token string, s *Subscriber, h *DraftHub) {
 
 func deactivateBidder(token string, s *Subscriber, h *DraftHub) {
   log.Printf("DEAUTHORIZE BIDDER")
-  if _, ok := h.bidders[token]; ok {
-    delete(h.bidders, token)
+  if _, ok := h.biddersMap[token]; ok {
+    delete(h.biddersMap, token)
   }
 
   s.bidderId = ""
@@ -103,17 +103,8 @@ func deactivateBidder(token string, s *Subscriber, h *DraftHub) {
 
 func getBidders(s *Subscriber, h *DraftHub) {
   log.Printf("GET BIDDERS")
-  var bidderSlice []*Bidder
-  for _, v := range h.bidders {
-    bidderSlice = append(bidderSlice, v)
-    r, _ := json.Marshal(v)
-    log.Printf("%s", r)
-  }
 
-  log.Println(h.bidders)
-  log.Println(bidderSlice)
-
-  response := Response{"GET_BIDDERS", map[string]interface{}{"bidders": bidderSlice}}
+  response := Response{"GET_BIDDERS", map[string]interface{}{"bidders": h.biddersSlice}}
   response_json, err := json.Marshal(response)
   if err != nil {
     log.Printf("error: %v", err)

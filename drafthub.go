@@ -28,8 +28,11 @@ type DraftHub struct {
   // players eligable for draft
   players map[string]*Player
 
+  // store order of bidders
+  biddersSlice []*Bidder
+
   // bidders in the draft
-  bidders map[string]*Bidder
+  biddersMap map[string]*Bidder
 
   // flag to set when you want to close draft room
   isActive bool
@@ -53,13 +56,18 @@ func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
     acceptMessage:  make(chan *Message),
 		clients:        make(map[*Subscriber]bool),
     players:        player_map,
-    bidders:        bidder_map,
+    biddersMap:     bidder_map,
+    biddersSlice:   bidders,
     isActive:       true,
 	}
 }
 
 func (h *DraftHub) run() {
 	for {
+    if !h.isActive {
+      break
+    }
+
 		select {
 
 		case client := <-h.register:
@@ -70,7 +78,7 @@ func (h *DraftHub) run() {
       log.Println("DISCONNECTING CLIENT")
 			if _, ok := h.clients[client]; ok {
         // mark bidder as inactive
-        b := h.bidders[client.bidderId]
+        b := h.biddersMap[client.bidderId]
         if b != nil {
           b.ActiveConnection = false
         }

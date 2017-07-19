@@ -7,7 +7,7 @@ import (
   "io/ioutil"
 )
 
-var GOLD_LEAGUE_APP_URI = "http://localhost:5000"
+var GOLD_LEAGUE_APP_URI = "https://goldleagueffball.appspot.com"
 
 type Owner struct {
   Name string `json:"name"`

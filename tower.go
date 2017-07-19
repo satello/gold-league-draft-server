@@ -35,7 +35,7 @@ func newRoom(t *Tower, bidders []*Bidder, players []*Player) string {
   // TODO watch out or memory leaks with this. Do go routines shut down when the parent does?
   log.Println("new draft room created")
   log.Println(roomId)
-  log.Printf("number of bidders %d", len(newDraftRoom.bidders))
+  log.Printf("number of bidders %d", len(newDraftRoom.biddersSlice))
   t.rooms[roomId] = newDraftRoom
 
   return roomId
