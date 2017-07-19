@@ -55,16 +55,14 @@ func main() {
         http.Error(w, err.Error(), 400)
         return
     }
-    fmt.Println(len(body.Bidders))
-		// decoder := json.NewDecoder(r.Body)
-		// var body *Room
-		// err := decoder.Decode(body)
-		// log.Println(body.Rules)
-		// if err != nil {
-		// 	log.Println(err)
-		// 	return
-		// }
-		// spin up new draft hub
+
+		// assign bidder ids
+		// TODO should it really be here?
+		for _, v := range body.Bidders {
+			new_uuid := createUuid()
+			v.BidderId = new_uuid
+		}
+
 		roomId := newRoom(trumpTower, body.Rules, body.Bidders, body.Players)
 		// return room id
 		w.Header().Set("Content-Type", "application/json")

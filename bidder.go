@@ -16,7 +16,7 @@ type Bidder struct {
   Spots int   `json:"spots"`
 
   // bidder uuid
-  bidderId string
+  BidderId string `json:"bidderId"`
 }
 
 func newBidder(name string, cap int, spots int) *Bidder {

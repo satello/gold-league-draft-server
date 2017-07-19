@@ -31,13 +31,18 @@ type DraftHub struct {
   // bidders in the draft
   bidders map[string]*Bidder
 
+  // draft rules
   rules *Rules
+
+  // flag to set when you want to close draft room
+  isActive bool
 }
 
 func newDraft(rules *Rules, bidders []*Bidder, players []*Player) *DraftHub {
   bidder_map := make(map[string]*Bidder)
-  for i := range bidders {
-    bidder_map[bidders[i].bidderId] = bidders[i]
+  for _, v := range bidders {
+    log.Printf("%s", v.BidderId)
+    bidder_map[v.BidderId] = v
   }
 
 	return &DraftHub{
@@ -49,6 +54,7 @@ func newDraft(rules *Rules, bidders []*Bidder, players []*Player) *DraftHub {
     players:        make(map[string]*Player),
     bidders:        bidder_map,
     rules:          rules,
+    isActive:       true,
 	}
 }
 
