@@ -38,8 +38,12 @@ type DraftHub struct {
 func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
   bidder_map := make(map[string]*Bidder)
   for _, v := range bidders {
-    log.Printf("%s", v.BidderId)
     bidder_map[v.BidderId] = v
+  }
+
+  player_map := make(map[string]*Player)
+  for _, v := range players {
+    player_map[v.Name] = v
   }
 
 	return &DraftHub{
@@ -48,7 +52,7 @@ func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
 		unregister:     make(chan *Subscriber),
     acceptMessage:  make(chan *Message),
 		clients:        make(map[*Subscriber]bool),
-    players:        make(map[string]*Player),
+    players:        player_map,
     bidders:        bidder_map,
     isActive:       true,
 	}

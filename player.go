@@ -1,5 +1,10 @@
 package main
 
+import (
+	"log"
+	"encoding/json"
+)
+
 type Player struct {
   // player name
 	Name string `json:"name"`
@@ -40,22 +45,18 @@ func (p *Player) submitBid(bid int, bidder Bidder) bool {
 
 func getPlayers(s *Subscriber, h *DraftHub) {
   log.Printf("GET PLAYERS")
-  // var playerSlice []*Player
-  // for _, v := range h.players {
-  //   bidderSlice = append(bidderSlice, v)
-  //   r, _ := json.Marshal(v)
-  //   log.Printf("%s", r)
-  // }
-	//
-  // log.Println(h.bidders)
-  // log.Println(bidderSlice)
+	// FIXME this is kind of dumb
+	var playerSlice []*Player
+  for _, v := range h.players {
+    playerSlice = append(playerSlice, v)
+  }
+	log.Printf("number of players in slice %d", len(playerSlice))
 
-  response := Response{"GET_PLAYERS", map[string]interface{}{"players": h.players}}
+  response := Response{"GET_PLAYERS", map[string]interface{}{"players": playerSlice}}
   response_json, err := json.Marshal(response)
   if err != nil {
     log.Printf("error: %v", err)
     return
   }
-  log.Printf("%s", response_json)
   sendMessageToSubscriber(h, s, response_json)
 }
