@@ -52,7 +52,6 @@ func main() {
 	router.GET("/:roomNumber/connect", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		// see if draft room exists
 		log.Println("trying to connect....")
-		log.Println(len(trumpTower.rooms))
 		log.Println(ps.ByName("roomNumber"))
 		hub := trumpTower.rooms[ps.ByName("roomNumber")]
 		if hub != nil {

@@ -36,6 +36,9 @@ type DraftHub struct {
 
   // flag to set when you want to close draft room
   isActive bool
+
+  // draft room
+  // draftLoop *DraftLoop
 }
 
 func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
@@ -63,8 +66,15 @@ func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
 }
 
 func (h *DraftHub) run() {
+  dl := newDraftLoop(h.biddersSlice, h)
+  go dl.start()
+
 	for {
     if !h.isActive {
+      // stop all connections
+      // for _, c := range clients {
+      //   h.unregister <- c
+      // }
       break
     }
 
@@ -81,6 +91,7 @@ func (h *DraftHub) run() {
         b := h.biddersMap[client.bidderId]
         if b != nil {
           b.ActiveConnection = false
+          broadcastBidderState(b, h)
         }
         // remove client
 				delete(h.clients, client)

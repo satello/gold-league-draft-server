@@ -2,6 +2,7 @@ package main
 
 import (
   "log"
+  "time"
 )
 
 type Tower struct {
@@ -31,6 +32,13 @@ func newRoom(t *Tower, bidders []*Bidder, players []*Player) string {
 
   // start new hub
   go newDraftRoom.run()
+  timer := time.NewTimer(time.Hour * 24)
+  go func() {
+    <- timer.C
+    newDraftRoom.isActive = false
+    delete(t.rooms, roomId)
+    log.Printf("room %s no longer active", roomId)
+  }()
 
   // TODO watch out or memory leaks with this. Do go routines shut down when the parent does?
   log.Println("new draft room created")

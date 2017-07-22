@@ -20,6 +20,9 @@ type Bidder struct {
 
   // has an active websocket connection
   ActiveConnection bool `json:"activeConnection"`
+
+  // whether the bidder is eligable to keep drafting
+  draftible bool
 }
 
 func newBidder(name string, cap int, spots int) *Bidder {
@@ -27,6 +30,7 @@ func newBidder(name string, cap int, spots int) *Bidder {
     Name: name,
     Cap: cap,
     Spots: spots,
+    draftible: true,
   }
 }
 
@@ -68,10 +72,14 @@ func authorizeBidder(token string, s *Subscriber, h *DraftHub) {
       // attach bidderId to connection
       s.bidderId = token
       // mark connection as active
+      log.Println("ACTIVATING CONNECTION")
       b.ActiveConnection = true
+      // send response to subscriber
       sendMessageToSubscriber(h, s, response_json)
+      // braodcast that there is a new bidder
+      broadcastBidderState(b, h)
     } else {
-      response := Response{"DUPLICATE_CONNECTION", nil}
+      response := Response{"INVALID_TOKEN", nil}
       response_json, err := json.Marshal(response)
       if err != nil {
         log.Printf("error: %v", err)
@@ -112,4 +120,17 @@ func getBidders(s *Subscriber, h *DraftHub) {
   }
   log.Printf("%s", response_json)
   sendMessageToSubscriber(h, s, response_json)
+}
+
+func broadcastBidderState(b *Bidder, h *DraftHub) {
+  log.Printf("BIDDER %s STATE CHANGE", b.Name)
+
+  response := Response{"BIDDER_STATE_CHANGE", map[string]interface{}{"bidder": b}}
+  response_json, err := json.Marshal(response)
+  if err != nil {
+    log.Printf("error: %v", err)
+    return
+  }
+  log.Printf("%s", response_json)
+  broadcastMessage(h, response_json)
 }
