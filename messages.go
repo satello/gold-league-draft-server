@@ -18,6 +18,11 @@ type TokenBody struct {
   Token string `json:"token"`
 }
 
+type NominationBody struct {
+  PlayerName string `json:"playerName"`
+  BidderId string `json:"bidderId"`
+}
+
 // SEND MESSAGE TO ALL CLIENTS
 func broadcastMessage(h *DraftHub, message []byte) {
   for client := range h.clients {

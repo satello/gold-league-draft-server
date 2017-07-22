@@ -25,7 +25,10 @@ type DraftHub struct {
   // accept message from client
   acceptMessage chan *Message
 
-  // players eligable for draft
+  // channel for nomination cycle to communicate with hub
+  startBidding chan *Player
+
+  // players eligable for draft. name to player
   players map[string]*Player
 
   // store order of bidders
@@ -34,11 +37,15 @@ type DraftHub struct {
   // bidders in the draft
   biddersMap map[string]*Bidder
 
+  // current bidder index
+  curBidderIndex int
+
   // flag to set when you want to close draft room
   isActive bool
 
-  // draft room
-  // draftLoop *DraftLoop
+  // -- LOOPS --
+  // nomination loop
+  nominationCycle *NominationCycle
 }
 
 func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
@@ -52,32 +59,27 @@ func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
     player_map[v.Name] = v
   }
 
+  nominationCycle := newNominationCycle()
+
 	return &DraftHub{
-		broadcast:      make(chan []byte),
-		register:       make(chan *Subscriber),
-		unregister:     make(chan *Subscriber),
-    acceptMessage:  make(chan *Message),
-		clients:        make(map[*Subscriber]bool),
-    players:        player_map,
-    biddersMap:     bidder_map,
-    biddersSlice:   bidders,
-    isActive:       true,
+		broadcast:        make(chan []byte),
+		register:         make(chan *Subscriber),
+		unregister:       make(chan *Subscriber),
+    acceptMessage:    make(chan *Message),
+    startBidding:     make(chan *Player),
+		clients:          make(map[*Subscriber]bool),
+    curBidderIndex:   0,
+    players:          player_map,
+    biddersMap:       bidder_map,
+    biddersSlice:     bidders,
+    isActive:         false,
+    nominationCycle:  nominationCycle,
 	}
 }
 
 func (h *DraftHub) run() {
-  dl := newDraftLoop(h.biddersSlice, h)
-  go dl.start()
-
+  // handle draft related tasks
 	for {
-    if !h.isActive {
-      // stop all connections
-      // for _, c := range clients {
-      //   h.unregister <- c
-      // }
-      break
-    }
-
 		select {
 
 		case client := <-h.register:
@@ -99,16 +101,12 @@ func (h *DraftHub) run() {
 				close(client.send)
 			}
 
+    case player := <-h.startBidding:
+      log.Println("GLORIOUS DAY")
+      log.Println(player)
+
 		case messageJson := <-h.acceptMessage:
       switch t := messageJson.MessageType; t {
-
-    	// case "newBidder":
-      //   var body NewBidderBody
-      //   mapstructure.Decode(messageJson.Body, &body)
-      //   name := body.Name
-      //   cap := body.Cap
-      //   spots := body.Spots
-      //   createBidder(name, cap, spots, messageJson.Subscriber, h)
 
       case "authorizeBidder":
         var body TokenBody
@@ -129,6 +127,31 @@ func (h *DraftHub) run() {
 
       case "getPlayers":
         getPlayers(messageJson.Subscriber, h)
+
+      case "startDraft":
+        if !h.isActive {
+          h.isActive = true
+          firstBidder := h.biddersSlice[h.curBidderIndex]
+          // send to front end who is allowed to make first nomination
+          broadcastNewBidderNominee(firstBidder, h)
+
+          // start the clock
+          go h.nominationCycle.getNominee(h)
+        }
+
+      case "nominatePlayer":
+        var body NominationBody
+        mapstructure.Decode(messageJson.Body, &body)
+
+        player := h.players[body.PlayerName]
+        if player == nil {
+          log.Printf("Shit the bed. %s not in hub", body.PlayerName)
+        }
+
+        h.nominationCycle.nominationChan <- &Nomination{
+          player: player,
+          bidderId: body.BidderId,
+        }
 
     	case "chatMessage":
         log.Printf("CHAT MESSAGE");

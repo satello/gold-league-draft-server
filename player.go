@@ -22,7 +22,7 @@ type Player struct {
   Bid int `json:"bid"`
 
   // bid owner
-  bidder Bidder
+  bidderId string
 }
 
 func newPlayer(name string, position string) *Player {
@@ -33,15 +33,15 @@ func newPlayer(name string, position string) *Player {
   }
 }
 
-func (p *Player) submitBid(bid int, bidder Bidder) bool {
-  if bid > p.Bid && p.bidder != bidder {
-    p.Bid = bid
-    p.bidder = bidder
-    return true
-  } else {
-    return false
-  }
-}
+// func (p *Player) submitBid(bid int, bidder Bidder) bool {
+//   if bid > p.Bid && p.bidder != bidder {
+//     p.Bid = bid
+//     p.bidder = bidder
+//     return true
+//   } else {
+//     return false
+//   }
+// }
 
 func getPlayers(s *Subscriber, h *DraftHub) {
   log.Printf("GET PLAYERS")
