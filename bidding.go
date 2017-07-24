@@ -34,3 +34,14 @@ func broadcastNewBidderNominee(bidder *Bidder, h *DraftHub) {
   log.Printf("%s", response_json)
   broadcastMessage(h, response_json)
 }
+
+func broadcastNewPlayerNominee(player *Player, h *DraftHub) {
+  response := Response{"NEW_PLAYER_NOMINEE", map[string]interface{}{"name": player.Name}}
+  response_json, err := json.Marshal(response)
+  if err != nil {
+    log.Printf("error: %v", err)
+    return
+  }
+  log.Printf("%s", response_json)
+  broadcastMessage(h, response_json)
+}

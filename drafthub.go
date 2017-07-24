@@ -104,8 +104,10 @@ func (h *DraftHub) run() {
 
     case player := <-h.startBidding:
       h.curBidderIndex += 1
-      log.Println("GLORIOUS DAY")
       log.Println(player)
+
+      broadcastNewPlayerNominee(player, h)
+
 
 		case messageJson := <-h.acceptMessage:
       switch t := messageJson.MessageType; t {
@@ -147,7 +149,9 @@ func (h *DraftHub) run() {
         broadcastNewBidderNominee(firstBidder, h)
 
         // start the clock
-        go h.nominationCycle.getNominee(h)
+        if (!h.nominationCycle.open) {
+          go h.nominationCycle.getNominee(h)
+        }
 
       case "nominatePlayer":
         log.Println("NOMINATING PLAYER")
