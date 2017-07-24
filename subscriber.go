@@ -86,6 +86,7 @@ func (c *Subscriber) readPump() {
 
     // add the subscriber to the message
     m.Subscriber = c
+		m.rawJson = message
     // send to hub
 		c.hub.acceptMessage <- &m
 	}

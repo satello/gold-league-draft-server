@@ -6,6 +6,7 @@ type Message struct {
     BidderId string
     Body map[string]interface{}
     Subscriber *Subscriber
+    rawJson []byte
 }
 
 type NewBidderBody struct {
@@ -19,7 +20,7 @@ type TokenBody struct {
 }
 
 type NominationBody struct {
-  PlayerName string `json:"playerName"`
+  PlayerName string `json:"name"`
   BidderId string `json:"bidderId"`
 }
 

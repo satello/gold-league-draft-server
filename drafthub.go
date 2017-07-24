@@ -5,6 +5,7 @@ import (
   "encoding/json"
   "log"
   "github.com/mitchellh/mapstructure"
+  "github.com/karlseguin/typed"
 )
 
 // draft hub maintains the set of active clients and broadcasts messages to the
@@ -102,6 +103,7 @@ func (h *DraftHub) run() {
 			}
 
     case player := <-h.startBidding:
+      h.curBidderIndex += 1
       log.Println("GLORIOUS DAY")
       log.Println(player)
 
@@ -139,18 +141,39 @@ func (h *DraftHub) run() {
           go h.nominationCycle.getNominee(h)
         }
 
-      case "nominatePlayer":
-        var body NominationBody
-        mapstructure.Decode(messageJson.Body, &body)
+      case "nextNomination":
+        firstBidder := h.biddersSlice[h.curBidderIndex]
+        // send to front end who is allowed to make first nomination
+        broadcastNewBidderNominee(firstBidder, h)
 
-        player := h.players[body.PlayerName]
+        // start the clock
+        go h.nominationCycle.getNominee(h)
+
+      case "nominatePlayer":
+        log.Println("NOMINATING PLAYER")
+        if !h.nominationCycle.open {
+          log.Println("nominationCycle isn't open")
+          continue
+        }
+        typed, _ := typed.Json(messageJson.rawJson)
+
+        body := typed.Object("body")
+        playerName := body.String("name")
+        bidderId := body.String("bidderId")
+        if bidderId != h.biddersSlice[h.curBidderIndex].BidderId {
+          log.Println("BAD NOMINATOR")
+          continue
+        }
+        log.Println(playerName)
+        player := h.players[playerName]
         if player == nil {
-          log.Printf("Shit the bed. %s not in hub", body.PlayerName)
+          log.Printf("Shit the bed. %s not in hub", playerName)
         }
 
+        log.Println("trying to nominate")
         h.nominationCycle.nominationChan <- &Nomination{
           player: player,
-          bidderId: body.BidderId,
+          bidderId: bidderId,
         }
 
     	case "chatMessage":

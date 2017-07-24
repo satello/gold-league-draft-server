@@ -9,20 +9,25 @@ import (
 type NominationCycle struct {
   // message channel for new nominations
   nominationChan chan *Nomination
+
+  open bool
 }
 
 func newNominationCycle() *NominationCycle {
 
 	return &NominationCycle{
     nominationChan: make(chan *Nomination),
+    open: false,
 	}
 }
 
 // use as go routine. has callback to hub
 func (d *NominationCycle) getNominee(h *DraftHub) {
+  d.open = true
   ticks := 30
   nominationTicker := time.NewTicker(time.Second)
 
+  loop:
   for {
     select {
     case <- nominationTicker.C:
@@ -34,7 +39,8 @@ func (d *NominationCycle) getNominee(h *DraftHub) {
         h.startBidding <- &Player{
           Name: "shit stain",
         }
-        return
+        d.open = false
+        break loop
       }
     case nomination := <- d.nominationChan:
       nominationTicker.Stop()
@@ -44,7 +50,8 @@ func (d *NominationCycle) getNominee(h *DraftHub) {
       currentPlayer.bidderId = nomination.bidderId
       // call back to hub that you have a new player up for bid
       h.startBidding <- currentPlayer
-      return
+      d.open = false
+      break loop
     }
   }
 }
