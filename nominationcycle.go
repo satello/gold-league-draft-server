@@ -20,7 +20,7 @@ func newNominationCycle() *NominationCycle {
 
 // use as go routine. has callback to hub
 func (d *NominationCycle) getNominee(h *DraftHub) {
-  ticks := 31
+  ticks := 30
   nominationTicker := time.NewTicker(time.Second)
 
   for {
