@@ -52,9 +52,9 @@ func (d *BiddingCycle) getBids(player *Player, h *DraftHub) {
       player.bid = bid
       log.Println(bid)
       // reset timer if ticks < 12 seconds
-      if ticks < 12 {
+      if ticks < 15 {
+        ticks = 15
         updateCountdown(ticks, h)
-        ticks = 12
       }
       broadcastNewPlayerBid(player, h)
     }

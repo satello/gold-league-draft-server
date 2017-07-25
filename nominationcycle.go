@@ -22,7 +22,7 @@ func newNominationCycle() *NominationCycle {
 // use as go routine. has callback to hub
 func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
   d.open = true
-  ticks := 5
+  ticks := 30
   updateCountdown(ticks, h)
   nominationTicker := time.NewTicker(time.Second)
 

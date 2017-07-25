@@ -108,7 +108,7 @@ func (h *DraftHub) run() {
 			}
 
     case player := <-h.startBidding:
-      h.curBidderIndex += 1
+      h.curBidderIndex = (h.curBidderIndex + 1) % len(h.biddersSlice)
 
       broadcastNewPlayerNominee(player, h)
 
@@ -136,7 +136,8 @@ func (h *DraftHub) run() {
       // TODO send something to gold league app to record result
 
       // make it so player cannot be nominated or bid upon again
-      player.taken = true
+      player.Taken = true
+      braodcastPlayers(h)
 
       // Keep the train rolling
       nextNomination(h)
@@ -196,7 +197,7 @@ func (h *DraftHub) run() {
           log.Printf("Shit the bed. %s not in hub", playerName)
           continue
         }
-        if player.taken {
+        if player.Taken {
           log.Println("Player already bid on")
           continue
         }
