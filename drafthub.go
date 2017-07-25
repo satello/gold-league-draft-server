@@ -32,7 +32,7 @@ type DraftHub struct {
   endBidding chan *Player
 
   // players eligable for draft. name to player
-  players map[string]*Player
+  players *PlayersIndex
 
   // store order of bidders
   biddersSlice []*Bidder
@@ -60,10 +60,7 @@ func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
     bidder_map[v.BidderId] = v
   }
 
-  player_map := make(map[string]*Player)
-  for _, v := range players {
-    player_map[v.Name] = v
-  }
+  playersIndex := newPlayersIndex(players)
 
   nominationCycle := newNominationCycle()
   biddingCycle := newBiddingCycle()
@@ -77,7 +74,7 @@ func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
     endBidding:       make(chan *Player),
 		clients:          make(map[*Subscriber]bool),
     curBidderIndex:   0,
-    players:          player_map,
+    players:          playersIndex,
     biddersMap:       bidder_map,
     biddersSlice:     bidders,
     isActive:         false,
@@ -138,9 +135,8 @@ func (h *DraftHub) run() {
 
       // TODO send something to gold league app to record result
 
-      // remove player from bidding pool
-      // FIXME come up with a better way to get this on the front end
-      delete(h.players, player.Name)
+      // make it so player cannot be nominated or bid upon again
+      player.taken = true
 
       // Keep the train rolling
       nextNomination(h)
@@ -195,9 +191,14 @@ func (h *DraftHub) run() {
           continue
         }
 
-        player := h.players[playerName]
+        player := h.players.getPlayerByName(playerName)
         if player == nil {
           log.Printf("Shit the bed. %s not in hub", playerName)
+          continue
+        }
+        if player.taken {
+          log.Println("Player already bid on")
+          continue
         }
 
         h.nominationCycle.nominationChan <- &Nomination{
@@ -220,8 +221,9 @@ func (h *DraftHub) run() {
         // Check to make sure bid is valid
         if h.biddersMap[bidderId].Cap < amount || h.biddersMap[bidderId].Spots < 1 {
           log.Printf("Bidder %s has insufficient resources to make bid", bidderId)
+          continue
         }
-
+        log.Println("trying to give to chan")
         h.biddingCycle.biddingChan <- &Bid{
           amount: amount,
           bidderId: bidderId,

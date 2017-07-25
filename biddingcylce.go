@@ -2,6 +2,7 @@ package main
 
 import (
   "time"
+  "log"
 )
 
 type BiddingCycle struct {
@@ -23,33 +24,36 @@ func newBiddingCycle() *BiddingCycle {
 func (d *BiddingCycle) getBids(player *Player, h *DraftHub) {
   d.open = true
   ticks := 30
-  nominationTicker := time.NewTicker(time.Second)
+  updateCountdown(ticks, h)
+  biddingTicker := time.NewTicker(time.Second)
 
   loop:
   for {
     select {
-    case <- nominationTicker.C:
+    case <- biddingTicker.C:
       ticks -= 1
       updateCountdown(ticks, h)
       if ticks < 1 {
-        nominationTicker.Stop()
-        // TODO handle person not nominating someone in time
+        biddingTicker.Stop()
+
         h.endBidding <- player
         d.open = false
         break loop
       }
     case bid := <- d.biddingChan:
       currentBid := player.bid.amount
-      currentBidderId := player.bid.bidderId
+      // currentBidderId := player.bid.bidderId
 
       // skip bid if owner already has top bid or bid isn't high enough
-      if bid.amount <= currentBid || currentBidderId == bid.bidderId {
+      if bid.amount <= currentBid {
         continue
       }
 
       player.bid = bid
+      log.Println(bid)
       // reset timer if ticks < 12 seconds
       if ticks < 12 {
+        updateCountdown(ticks, h)
         ticks = 12
       }
       broadcastNewPlayerBid(player, h)

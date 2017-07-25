@@ -80,6 +80,6 @@ func nextNomination(h *DraftHub) {
     }
 
     broadcastNewBidderNominee(nextNominator, h)
-    go h.nominationCycle.getNominee(h)
+    go h.nominationCycle.getNominee(h, nextNominator.BidderId)
   }
 }

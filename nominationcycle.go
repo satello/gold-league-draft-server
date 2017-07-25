@@ -20,9 +20,10 @@ func newNominationCycle() *NominationCycle {
 }
 
 // use as go routine. has callback to hub
-func (d *NominationCycle) getNominee(h *DraftHub) {
+func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
   d.open = true
-  ticks := 30
+  ticks := 5
+  updateCountdown(ticks, h)
   nominationTicker := time.NewTicker(time.Second)
 
   loop:
@@ -34,8 +35,11 @@ func (d *NominationCycle) getNominee(h *DraftHub) {
       if ticks < 1 {
         nominationTicker.Stop()
         // TODO handle person not nominating someone in time
-        h.startBidding <- &Player{
-          Name: "shit stain",
+        autoPlayer := h.players.getHighestValuePlayer()
+        h.startBidding <- autoPlayer
+        autoPlayer.bid = &Bid{
+          amount: 1,
+          bidderId: bidderId,
         }
         d.open = false
         break loop
@@ -46,7 +50,7 @@ func (d *NominationCycle) getNominee(h *DraftHub) {
 
       currentPlayer.bid = &Bid{
         amount: 1,
-        bidderId: nomination.bidderId,
+        bidderId: bidderId,
       }
       // call back to hub that you have a new player up for bid
       h.startBidding <- currentPlayer
