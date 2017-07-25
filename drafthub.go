@@ -2,7 +2,6 @@ package main
 
 import (
   "fmt"
-  "encoding/json"
   "log"
   "github.com/mitchellh/mapstructure"
   "github.com/karlseguin/typed"
@@ -29,6 +28,9 @@ type DraftHub struct {
   // channel for nomination cycle to communicate with hub
   startBidding chan *Player
 
+  // end bidding on player
+  endBidding chan *Player
+
   // players eligable for draft. name to player
   players map[string]*Player
 
@@ -47,6 +49,9 @@ type DraftHub struct {
   // -- LOOPS --
   // nomination loop
   nominationCycle *NominationCycle
+
+  // bidding loop
+  biddingCycle *BiddingCycle
 }
 
 func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
@@ -61,6 +66,7 @@ func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
   }
 
   nominationCycle := newNominationCycle()
+  biddingCycle := newBiddingCycle()
 
 	return &DraftHub{
 		broadcast:        make(chan []byte),
@@ -68,6 +74,7 @@ func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
 		unregister:       make(chan *Subscriber),
     acceptMessage:    make(chan *Message),
     startBidding:     make(chan *Player),
+    endBidding:       make(chan *Player),
 		clients:          make(map[*Subscriber]bool),
     curBidderIndex:   0,
     players:          player_map,
@@ -75,6 +82,7 @@ func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
     biddersSlice:     bidders,
     isActive:         false,
     nominationCycle:  nominationCycle,
+    biddingCycle:     biddingCycle,
 	}
 }
 
@@ -104,9 +112,38 @@ func (h *DraftHub) run() {
 
     case player := <-h.startBidding:
       h.curBidderIndex += 1
-      log.Println(player)
 
       broadcastNewPlayerNominee(player, h)
+
+      // start bidding cycle
+      go h.biddingCycle.getBids(player, h)
+
+
+    case player := <-h.endBidding:
+      log.Println("BIDDING ENDED")
+      log.Println(player)
+
+      // subtract cap and space from bidder
+      bidder := h.biddersMap[player.bid.bidderId]
+      bidder.Cap -= player.bid.amount
+      bidder.Spots -= 1
+
+      if bidder.Cap < 1 || bidder.Spots < 1 {
+        // mark bidder as unable to draft any longer
+        bidder.Draftable = false
+      }
+
+      // send out message adjusting bidders cap, spots and eligability
+      broadcastBidderState(bidder, h)
+
+      // TODO send something to gold league app to record result
+
+      // remove player from bidding pool
+      // FIXME come up with a better way to get this on the front end
+      delete(h.players, player.Name)
+
+      // Keep the train rolling
+      nextNomination(h)
 
 
 		case messageJson := <-h.acceptMessage:
@@ -135,23 +172,12 @@ func (h *DraftHub) run() {
       case "startDraft":
         if !h.isActive {
           h.isActive = true
-          firstBidder := h.biddersSlice[h.curBidderIndex]
-          // send to front end who is allowed to make first nomination
-          broadcastNewBidderNominee(firstBidder, h)
-
-          // start the clock
-          go h.nominationCycle.getNominee(h)
+          nextNomination(h)
         }
 
       case "nextNomination":
-        firstBidder := h.biddersSlice[h.curBidderIndex]
-        // send to front end who is allowed to make first nomination
-        broadcastNewBidderNominee(firstBidder, h)
+        nextNomination(h)
 
-        // start the clock
-        if (!h.nominationCycle.open) {
-          go h.nominationCycle.getNominee(h)
-        }
 
       case "nominatePlayer":
         log.Println("NOMINATING PLAYER")
@@ -168,15 +194,36 @@ func (h *DraftHub) run() {
           log.Println("BAD NOMINATOR")
           continue
         }
-        log.Println(playerName)
+
         player := h.players[playerName]
         if player == nil {
           log.Printf("Shit the bed. %s not in hub", playerName)
         }
 
-        log.Println("trying to nominate")
         h.nominationCycle.nominationChan <- &Nomination{
           player: player,
+          bidderId: bidderId,
+        }
+
+      case "bid":
+        log.Println("PLACING BID")
+        if !h.biddingCycle.open {
+          log.Println("biddingCycle isn't open")
+          continue
+        }
+        typed, _ := typed.Json(messageJson.rawJson)
+
+        body := typed.Object("body")
+        amount := body.Int("amount")
+        bidderId := body.String("bidderId")
+
+        // Check to make sure bid is valid
+        if h.biddersMap[bidderId].Cap < amount || h.biddersMap[bidderId].Spots < 1 {
+          log.Printf("Bidder %s has insufficient resources to make bid", bidderId)
+        }
+
+        h.biddingCycle.biddingChan <- &Bid{
+          amount: amount,
           bidderId: bidderId,
         }
 
@@ -185,11 +232,7 @@ func (h *DraftHub) run() {
         body := messageJson.Body
 
         response := Response{"CHAT_MESSAGE", body}
-        response_json, err := json.Marshal(response)
-        if err != nil {
-    			log.Printf("error: %v", err)
-    			break
-        }
+        response_json := responseToJson(response)
         broadcastMessage(h, response_json)
 
     	default:

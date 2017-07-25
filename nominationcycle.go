@@ -2,8 +2,6 @@ package main
 
 import (
   "time"
-  "encoding/json"
-  "log"
 )
 
 type NominationCycle struct {
@@ -46,22 +44,14 @@ func (d *NominationCycle) getNominee(h *DraftHub) {
       nominationTicker.Stop()
       currentPlayer := nomination.player
 
-      currentPlayer.Bid = 1
-      currentPlayer.bidderId = nomination.bidderId
+      currentPlayer.bid = &Bid{
+        amount: 1,
+        bidderId: nomination.bidderId,
+      }
       // call back to hub that you have a new player up for bid
       h.startBidding <- currentPlayer
       d.open = false
       break loop
     }
   }
-}
-
-func updateCountdown(ticks int, h *DraftHub) {
-  response := Response{"TICKER_UPDATE", map[string]interface{}{"ticks": ticks}}
-  response_json, err := json.Marshal(response)
-  if err != nil {
-    log.Printf("error: %v", err)
-    return
-  }
-  broadcastMessage(h, response_json)
 }

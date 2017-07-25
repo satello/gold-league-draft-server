@@ -18,14 +18,7 @@ type Owner struct {
 
 // cast owner type to bidder
 func ownerToBidder(owner *Owner) *Bidder {
-  uuid := createUuid()
-
-  return &Bidder{
-    Name: owner.Name,
-    Cap: owner.CapRoom,
-    Spots: owner.SpotsAvailable,
-    BidderId: uuid,
-  }
+  return newBidder(owner.Name, owner.CapRoom, owner.SpotsAvailable)
 }
 
 

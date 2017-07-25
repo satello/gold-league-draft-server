@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"encoding/json"
 )
 
 type Player struct {
@@ -19,17 +18,16 @@ type Player struct {
 	Value int `json:"value"`
 
   // current bid
-  Bid int `json:"bid"`
-
-  // bid owner
-  bidderId string
+  bid *Bid
 }
 
 func newPlayer(name string, position string) *Player {
   return &Player{
     Name:     name,
     Position: position,
-    Bid:      0,
+    bid:      &Bid{
+			amount: 0,
+		},
   }
 }
 
@@ -53,10 +51,6 @@ func getPlayers(s *Subscriber, h *DraftHub) {
 	log.Printf("number of players in slice %d", len(playerSlice))
 
   response := Response{"GET_PLAYERS", map[string]interface{}{"players": playerSlice}}
-  response_json, err := json.Marshal(response)
-  if err != nil {
-    log.Printf("error: %v", err)
-    return
-  }
+  response_json := responseToJson(response)
   sendMessageToSubscriber(h, s, response_json)
 }
