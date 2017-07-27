@@ -27,7 +27,7 @@ func newBiddingCycle() *BiddingCycle {
 // use as go routine. has callback to hub
 func (d *BiddingCycle) getBids(player *Player, h *DraftHub) {
   d.open = true
-  ticks := 15
+  ticks := 30
   updateCountdown(ticks, h)
   biddingTicker := time.NewTicker(time.Second)
 
