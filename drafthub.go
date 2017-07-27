@@ -52,6 +52,9 @@ type DraftHub struct {
 
   // bidding loop
   biddingCycle *BiddingCycle
+
+  // state of the draft. to help frontend bootstrap
+  draftState *DraftState
 }
 
 func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
@@ -80,6 +83,7 @@ func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
     isActive:         false,
     nominationCycle:  nominationCycle,
     biddingCycle:     biddingCycle,
+    draftState:       &DraftState{},
 	}
 }
 
@@ -91,6 +95,8 @@ func (h *DraftHub) run() {
 		case client := <-h.register:
       log.Println("CONNECTING CLIENT")
 			h.clients[client] = true
+      // send the current state of the draft to client
+      sendDraftState(client, h)
 
 		case client := <-h.unregister:
       log.Println("DISCONNECTING CLIENT")
@@ -109,10 +115,12 @@ func (h *DraftHub) run() {
 
     case player := <-h.startBidding:
       h.curBidderIndex = (h.curBidderIndex + 1) % len(h.biddersSlice)
+      h.draftState.nominating = false
 
       broadcastNewPlayerNominee(player, h)
 
       // start bidding cycle
+      h.draftState.bidding = true
       go h.biddingCycle.getBids(player, h)
 
 
@@ -137,6 +145,7 @@ func (h *DraftHub) run() {
 
       // make it so player cannot be nominated or bid upon again
       player.Taken = true
+      h.draftState.bidding = false
       braodcastPlayers(h)
 
       // Keep the train rolling
@@ -169,6 +178,8 @@ func (h *DraftHub) run() {
       case "startDraft":
         if !h.isActive {
           h.isActive = true
+          h.draftState.Running = true
+          h.draftState.Paused = false
           nextNomination(h)
         }
 
@@ -224,14 +235,37 @@ func (h *DraftHub) run() {
           log.Printf("Bidder %s has insufficient resources to make bid", bidderId)
           continue
         }
-        log.Println("trying to give to chan")
         h.biddingCycle.biddingChan <- &Bid{
           amount: amount,
           bidderId: bidderId,
         }
 
+      case "pauseDraft":
+        log.Printf("PAUSING DRAFT")
+        if h.draftState.nominating {
+          h.nominationCycle.pauseChan <- true
+        } else if h.draftState.bidding {
+          h.biddingCycle.pauseChan <- true
+        }
+        h.draftState.Paused = true
+        response := Response{"DRAFT_PAUSED", nil}
+        response_json := responseToJson(response)
+        broadcastMessage(h, response_json)
+
+      case "resumeDraft":
+        log.Printf("RESUMING DRAFT")
+        if h.draftState.nominating {
+          h.nominationCycle.pauseChan <- false
+        } else if h.draftState.bidding {
+          h.biddingCycle.pauseChan <- false
+        }
+        h.draftState.Paused = false
+        response := Response{"DRAFT_RESUMED", nil}
+        response_json := responseToJson(response)
+        broadcastMessage(h, response_json)
+
     	case "chatMessage":
-        log.Printf("CHAT MESSAGE");
+        log.Printf("CHAT MESSAGE")
         body := messageJson.Body
 
         response := Response{"CHAT_MESSAGE", body}

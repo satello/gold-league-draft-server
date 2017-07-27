@@ -79,7 +79,9 @@ func nextNomination(h *DraftHub) {
       }
     }
 
+    h.draftState.CurrentNominatorId = nextNominator.BidderId
     broadcastNewBidderNominee(nextNominator, h)
+    h.draftState.nominating = true
     go h.nominationCycle.getNominee(h, nextNominator.BidderId)
   }
 }

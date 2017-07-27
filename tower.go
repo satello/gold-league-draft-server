@@ -24,9 +24,6 @@ type Room struct {
 }
 
 func newRoom(t *Tower, bidders []*Bidder, players []*Player) string {
-  log.Println("starting new room")
-  log.Printf("number of bidders %d", len(bidders))
-  log.Printf("number of players %d", len(players))
   roomId := createUuid()
   newDraftRoom := newDraft(bidders, players)
 
@@ -36,14 +33,12 @@ func newRoom(t *Tower, bidders []*Bidder, players []*Player) string {
   go func() {
     <- timer.C
     newDraftRoom.isActive = false
+    newDraftRoom.draftState.Running = false
     delete(t.rooms, roomId)
     log.Printf("room %s no longer active", roomId)
   }()
 
   // TODO watch out or memory leaks with this. Do go routines shut down when the parent does?
-  log.Println("new draft room created")
-  log.Println(roomId)
-  log.Printf("number of bidders %d", len(newDraftRoom.biddersSlice))
   t.rooms[roomId] = newDraftRoom
 
   return roomId

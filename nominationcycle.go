@@ -8,6 +8,10 @@ type NominationCycle struct {
   // message channel for new nominations
   nominationChan chan *Nomination
 
+  // pause chan for telling cycle to pause
+  pauseChan chan bool
+
+  // bool indicating if open
   open bool
 }
 
@@ -15,6 +19,7 @@ func newNominationCycle() *NominationCycle {
 
 	return &NominationCycle{
     nominationChan: make(chan *Nomination),
+    pauseChan: make(chan bool),
     open: false,
 	}
 }
@@ -22,7 +27,7 @@ func newNominationCycle() *NominationCycle {
 // use as go routine. has callback to hub
 func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
   d.open = true
-  ticks := 30
+  ticks := 5
   updateCountdown(ticks, h)
   nominationTicker := time.NewTicker(time.Second)
 
@@ -36,6 +41,10 @@ func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
         nominationTicker.Stop()
         // TODO handle person not nominating someone in time
         autoPlayer := h.players.getHighestValuePlayer()
+        // set auto nomination
+        h.draftState.CurrentBid = 1
+        h.draftState.CurrentBidderId = bidderId
+        h.draftState.CurrentPlayerName = autoPlayer.Name
         h.startBidding <- autoPlayer
         autoPlayer.bid = &Bid{
           amount: 1,
@@ -52,10 +61,21 @@ func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
         amount: 1,
         bidderId: bidderId,
       }
+
+      // update draft state
+      h.draftState.CurrentBid = 1
+      h.draftState.CurrentBidderId = bidderId
+      h.draftState.CurrentPlayerName = currentPlayer.Name
       // call back to hub that you have a new player up for bid
       h.startBidding <- currentPlayer
       d.open = false
       break loop
+    case shouldPause := <- d.pauseChan:
+      if shouldPause {
+        nominationTicker.Stop()
+      } else {
+        nominationTicker = time.NewTicker(time.Second)
+      }
     }
   }
 }
