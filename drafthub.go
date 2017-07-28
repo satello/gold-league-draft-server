@@ -10,6 +10,9 @@ import (
 // draft hub maintains the set of active clients and broadcasts messages to the
 // clients.
 type DraftHub struct {
+  // draft identifying string
+  draftId string
+
 	// Registered clients.
 	clients map[*Subscriber]bool
 
@@ -57,7 +60,7 @@ type DraftHub struct {
   draftState *DraftState
 }
 
-func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
+func newDraft(bidders []*Bidder, players []*Player, roomId string) *DraftHub {
   bidder_map := make(map[string]*Bidder)
   for _, v := range bidders {
     bidder_map[v.BidderId] = v
@@ -69,6 +72,7 @@ func newDraft(bidders []*Bidder, players []*Player) *DraftHub {
   biddingCycle := newBiddingCycle()
 
 	return &DraftHub{
+    draftId:          roomId,
 		broadcast:        make(chan []byte),
 		register:         make(chan *Subscriber),
 		unregister:       make(chan *Subscriber),
@@ -142,6 +146,11 @@ func (h *DraftHub) run() {
       broadcastBidderState(bidder, h)
 
       // TODO send something to gold league app to record result
+      success := recordBid(player, bidder, h)
+      if !success {
+        log.Println("Uh oh this aint good")
+        // TODO retry and then crash?
+      }
 
       // make it so player cannot be nominated or bid upon again
       player.Taken = true

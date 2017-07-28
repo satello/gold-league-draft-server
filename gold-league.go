@@ -5,9 +5,11 @@ import (
   "net/http"
   "encoding/json"
   "io/ioutil"
+  "bytes"
 )
 
-var GOLD_LEAGUE_APP_URI = "https://goldleagueffball.appspot.com"
+// var GOLD_LEAGUE_APP_URI = "https://goldleagueffball.appspot.com"
+var GOLD_LEAGUE_APP_URI = "http://localhost:5000"
 
 type Owner struct {
   Name string `json:"name"`
@@ -71,4 +73,21 @@ func fetchFreeAgents() []*Player {
   }
 
   return players
+}
+
+func recordBid(player *Player, bidder *Bidder, h *DraftHub) bool {
+  log.Println("RECORDING BID")
+  values := map[string]interface{}{"name": player.Name, "amount": player.bid.amount, "owner": bidder.Name}
+  jsonValue, _ := json.Marshal(values)
+
+  resp, err := http.Post(GOLD_LEAGUE_APP_URI + "/draft/" + h.draftId + "/player/result", "application/json", bytes.NewBuffer(jsonValue))
+  if err != nil {
+    log.Println(err)
+  }
+
+  if resp.StatusCode == 201 {
+    return true
+  } else {
+    return false
+  }
 }

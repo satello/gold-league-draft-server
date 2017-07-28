@@ -25,7 +25,7 @@ type Room struct {
 
 func newRoom(t *Tower, bidders []*Bidder, players []*Player) string {
   roomId := createUuid()
-  newDraftRoom := newDraft(bidders, players)
+  newDraftRoom := newDraft(bidders, players, roomId)
 
   // start new hub
   go newDraftRoom.run()
