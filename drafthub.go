@@ -1,7 +1,6 @@
 package main
 
 import (
-  "fmt"
   "log"
   "github.com/mitchellh/mapstructure"
   "github.com/karlseguin/typed"
@@ -284,7 +283,7 @@ func (h *DraftHub) run() {
     	default:
     		// freebsd, openbsd,
     		// plan9, windows...
-    		fmt.Printf("%s.", t)
+    		log.Printf("%s.", t)
       }
 		}
 	}

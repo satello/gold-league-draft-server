@@ -7,7 +7,6 @@ import (
 	"time"
   "encoding/json"
 	"github.com/gorilla/websocket"
-  "fmt"
 )
 
 const (
@@ -75,7 +74,6 @@ func (c *Subscriber) readPump() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-    fmt.Println(string(message[:]))
     // load JSON and handle message type
     var m Message
     e := json.Unmarshal(message, &m)

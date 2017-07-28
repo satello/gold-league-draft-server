@@ -49,7 +49,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
     fmt.Fprintf(w, `{"result":"%s"}`, roomId)
 	})
-	router.GET("/:roomNumber/connect", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	router.GET("/rooms/:roomNumber/connect", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		// see if draft room exists
 		log.Println("trying to connect....")
 		log.Println(ps.ByName("roomNumber"))
@@ -61,6 +61,10 @@ func main() {
 			http.Error(w, "Draft Room does not exist", 401)
 			return
 		}
+	})
+	router.GET("/rooms", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		json := trumpTower.getRoomsJson()
+		w.Write(json)
 	})
 
 	handler := cors.Default().Handler(router)
