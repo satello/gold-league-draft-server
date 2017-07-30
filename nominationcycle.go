@@ -2,6 +2,7 @@ package main
 
 import (
   "time"
+  "log"
 )
 
 type NominationCycle struct {
@@ -10,6 +11,9 @@ type NominationCycle struct {
 
   // pause chan for telling cycle to pause
   pauseChan chan bool
+
+  // channel for interupting cycle
+  interuptChan chan bool
 
   // bool indicating if open
   open bool
@@ -20,6 +24,7 @@ func newNominationCycle() *NominationCycle {
 	return &NominationCycle{
     nominationChan: make(chan *Nomination),
     pauseChan: make(chan bool),
+    interuptChan: make(chan bool),
     open: false,
 	}
 }
@@ -27,7 +32,7 @@ func newNominationCycle() *NominationCycle {
 // use as go routine. has callback to hub
 func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
   d.open = true
-  ticks := 5
+  ticks := 30
   updateCountdown(ticks, h)
   nominationTicker := time.NewTicker(time.Second)
 
@@ -75,6 +80,12 @@ func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
         nominationTicker.Stop()
       } else {
         nominationTicker = time.NewTicker(time.Second)
+      }
+    case interupt := <- d.interuptChan:
+      log.Println("stopping....")
+      if interupt {
+        d.open = false
+        break loop
       }
     }
   }

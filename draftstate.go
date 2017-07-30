@@ -32,3 +32,9 @@ func sendDraftState(s *Subscriber, h *DraftHub) {
   response_json := responseToJson(response)
   sendMessageToSubscriber(h, s, response_json)
 }
+
+func braodcastDraftState(h *DraftHub) {
+  response := Response{"INIT_DRAFT_STATE", map[string]interface{}{"draftState": h.draftState}}
+  response_json := responseToJson(response)
+  broadcastMessage(h, response_json)
+}

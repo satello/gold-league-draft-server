@@ -65,7 +65,6 @@ func fetchFreeAgents() []*Player {
 
   var players []*Player
   json.Unmarshal(body, &players)
-  log.Printf("Number of players in pool: %d", len(players))
 
   if len(players) < 1 {
     log.Println("Did not fetch players")
@@ -90,4 +89,29 @@ func recordBid(player *Player, bidder *Bidder, h *DraftHub) bool {
   } else {
     return false
   }
+}
+
+type RollbackResponse struct {
+  Success bool `json:"success"`
+
+  PlayerName string `json:"player"`
+}
+
+func rollbackNomination(h *DraftHub) *Player {
+  resp, err := http.Get(GOLD_LEAGUE_APP_URI + "/draft/" + h.draftId + "/rollback-nomination")
+  if err != nil {
+    log.Println(err)
+  }
+
+  defer resp.Body.Close()
+  body, err := ioutil.ReadAll(resp.Body)
+  if err != nil {
+    log.Println(err)
+  }
+
+  var response *RollbackResponse
+  json.Unmarshal(body, &response)
+
+  p := h.players.getPlayerByName(response.PlayerName)
+  return p
 }

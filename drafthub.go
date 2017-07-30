@@ -117,19 +117,19 @@ func (h *DraftHub) run() {
 			}
 
     case player := <-h.startBidding:
+      log.Println("STARTING BIDDING")
       h.curBidderIndex = (h.curBidderIndex + 1) % len(h.biddersSlice)
       h.draftState.nominating = false
 
+      // braodcast nominee to clients
       broadcastNewPlayerNominee(player, h)
 
       // start bidding cycle
       h.draftState.bidding = true
       go h.biddingCycle.getBids(player, h)
 
-
     case player := <-h.endBidding:
       log.Println("BIDDING ENDED")
-      log.Println(player)
 
       // subtract cap and space from bidder
       bidder := h.biddersMap[player.bid.bidderId]
@@ -194,6 +194,24 @@ func (h *DraftHub) run() {
       case "nextNomination":
         nextNomination(h)
 
+      case "rollbackNomination":
+        log.Println("ROLLING BACK NOMINATION")
+        if h.draftState.Running == false {
+          continue
+        }
+        if h.nominationCycle.open {
+          log.Println("stopping nomination cycle...")
+          h.nominationCycle.interuptChan <- true
+        } else if h.biddingCycle.open {
+          log.Println("not stopping shit")
+          // TODO should this be allowed?
+          // h.biddingCycle.interuptChan <- true
+          continue
+        }
+        player := rollbackNomination(h)
+        if player != nil {
+          go previousNomination(h, player)
+        }
 
       case "nominatePlayer":
         log.Println("NOMINATING PLAYER")

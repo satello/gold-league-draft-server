@@ -85,3 +85,68 @@ func nextNomination(h *DraftHub) {
     go h.nominationCycle.getNominee(h, nextNominator.BidderId)
   }
 }
+
+func previousNomination(h *DraftHub, player *Player) {
+  // FIXME this function pretty gross, error prone and hard to maintain
+  // no bidding cycle can currently be running
+  if (!h.biddingCycle.open) {
+    // start with previous index
+    var prevIndex int
+    prevIndex = h.curBidderIndex - 1
+
+    bidder := h.biddersMap[player.bid.bidderId]
+    if bidder == nil {
+      return
+    }
+
+    // return money, spot and eligibility
+    bidder.Cap += player.bid.amount
+    bidder.Spots += 1
+    bidder.Draftable = true
+    // reset bidder state
+    broadcastBidderState(bidder, h)
+
+    // looking for previous nominator
+    var prevNominator *Bidder
+    firstCycle := true
+
+    loop:
+    for {
+      // end draft if we nobody eligable to bid
+      if !firstCycle && h.curBidderIndex == prevIndex {
+        // FIXME end draft properly
+        return
+      }
+      firstCycle = false
+      prevNominator = h.biddersSlice[h.curBidderIndex]
+
+      if prevNominator.Draftable {
+        break loop
+      } else {
+        // if current bidder not eligable go to the next one
+        h.curBidderIndex = (h.curBidderIndex - 1) % len(h.biddersSlice)
+      }
+    }
+
+    // reset player bids
+    player.bid.bidderId = prevNominator.BidderId
+    player.bid.amount = 1
+    player.Taken = false
+    // put player back on list
+    braodcastPlayers(h)
+
+    // set state
+    // FIXME yuck
+    h.draftState.CurrentNominatorId = prevNominator.BidderId
+    h.draftState.CurrentBidderId = prevNominator.BidderId
+    h.draftState.CurrentBid = 1
+    h.draftState.CurrentPlayerName = player.Name
+    h.draftState.Paused = true
+    braodcastDraftState(h)
+
+    // start bid cycle
+    h.startBidding <- player
+    log.Println("pause so we are g2g")
+    h.biddingCycle.pauseChan <- true
+  }
+}

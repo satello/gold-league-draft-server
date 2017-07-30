@@ -11,6 +11,9 @@ type BiddingCycle struct {
   // pause chan for telling cycle to pause
   pauseChan chan bool
 
+  // channel for interupting cycle
+  interuptChan chan bool
+
   // bool indicating if open
   open bool
 }
@@ -20,6 +23,7 @@ func newBiddingCycle() *BiddingCycle {
 	return &BiddingCycle{
     biddingChan: make(chan *Bid),
     pauseChan: make(chan bool),
+    interuptChan: make(chan bool),
     open: false,
 	}
 }
@@ -27,7 +31,7 @@ func newBiddingCycle() *BiddingCycle {
 // use as go routine. has callback to hub
 func (d *BiddingCycle) getBids(player *Player, h *DraftHub) {
   d.open = true
-  ticks := 15
+  ticks := 30
   updateCountdown(ticks, h)
   biddingTicker := time.NewTicker(time.Second)
 
@@ -69,6 +73,9 @@ func (d *BiddingCycle) getBids(player *Player, h *DraftHub) {
       } else {
         biddingTicker = time.NewTicker(time.Second)
       }
+    case <- d.interuptChan:
+      d.open = false
+      break loop
     }
   }
 }
