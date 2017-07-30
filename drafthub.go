@@ -199,18 +199,20 @@ func (h *DraftHub) run() {
         if h.draftState.Running == false {
           continue
         }
-        if h.nominationCycle.open {
-          log.Println("stopping nomination cycle...")
-          h.nominationCycle.interuptChan <- true
-        } else if h.biddingCycle.open {
-          log.Println("not stopping shit")
-          // TODO should this be allowed?
-          // h.biddingCycle.interuptChan <- true
-          continue
-        }
         player := rollbackNomination(h)
         if player != nil {
+          if h.nominationCycle.open {
+            log.Println("stopping nomination cycle...")
+            h.nominationCycle.interuptChan <- true
+          } else if h.biddingCycle.open {
+            log.Println("stopping bidding cycle...")
+            h.biddingCycle.interuptChan <- true
+            // have to take off cur bidder index
+            h.curBidderIndex -= 1
+          }
           go previousNomination(h, player)
+        } else {
+          continue
         }
 
       case "nominatePlayer":

@@ -103,6 +103,9 @@ func rollbackNomination(h *DraftHub) *Player {
     log.Println(err)
   }
 
+  if resp.StatusCode != 200 {
+    return nil
+  }
   defer resp.Body.Close()
   body, err := ioutil.ReadAll(resp.Body)
   if err != nil {

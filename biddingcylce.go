@@ -2,6 +2,7 @@ package main
 
 import (
   "time"
+  "log"
 )
 
 type BiddingCycle struct {
@@ -73,9 +74,12 @@ func (d *BiddingCycle) getBids(player *Player, h *DraftHub) {
       } else {
         biddingTicker = time.NewTicker(time.Second)
       }
-    case <- d.interuptChan:
-      d.open = false
-      break loop
+    case interupt := <- d.interuptChan:
+      log.Println("interupt bidding cycle")
+      if interupt {
+        d.open = false
+        break loop
+      }
     }
   }
 }
