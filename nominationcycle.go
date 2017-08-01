@@ -61,14 +61,19 @@ func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
     case nomination := <- d.nominationChan:
       nominationTicker.Stop()
       currentPlayer := nomination.player
+      var amount int
+      amount = nomination.amount
+      if amount <= 0 {
+        amount = 1
+      }
 
       currentPlayer.bid = &Bid{
-        amount: 1,
+        amount: amount,
         bidderId: bidderId,
       }
 
       // update draft state
-      h.draftState.CurrentBid = 1
+      h.draftState.CurrentBid = amount
       h.draftState.CurrentBidderId = bidderId
       h.draftState.CurrentPlayerName = currentPlayer.Name
       // call back to hub that you have a new player up for bid
@@ -79,6 +84,8 @@ func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
       if shouldPause {
         nominationTicker.Stop()
       } else {
+        // just to make sure last one is stopped
+        nominationTicker.Stop()
         nominationTicker = time.NewTicker(time.Second)
       }
     case interupt := <- d.interuptChan:

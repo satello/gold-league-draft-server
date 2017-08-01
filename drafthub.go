@@ -225,6 +225,7 @@ func (h *DraftHub) run() {
 
         body := typed.Object("body")
         playerName := body.String("name")
+        amount := body.Int("amount")
         bidderId := body.String("bidderId")
         if bidderId != h.biddersSlice[h.curBidderIndex].BidderId {
           log.Println("BAD NOMINATOR")
@@ -244,6 +245,7 @@ func (h *DraftHub) run() {
         h.nominationCycle.nominationChan <- &Nomination{
           player: player,
           bidderId: bidderId,
+          amount: amount,
         }
 
       case "bid":

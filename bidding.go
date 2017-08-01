@@ -10,6 +10,9 @@ type Nomination struct {
 
   // id of the bidder that nominated player
   bidderId string
+
+  // amount of initial bid
+  amount int
 }
 
 type Bid struct {

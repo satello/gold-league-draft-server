@@ -72,6 +72,8 @@ func (d *BiddingCycle) getBids(player *Player, h *DraftHub) {
       if shouldPause {
         biddingTicker.Stop()
       } else {
+        // just to make sure last one is stopped before we start new one
+        biddingTicker.Stop()
         biddingTicker = time.NewTicker(time.Second)
       }
     case interupt := <- d.interuptChan:
