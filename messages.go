@@ -34,7 +34,7 @@ func broadcastMessage(h *DraftHub, message []byte) {
   for client := range h.clients {
     select {
     case client.send <- message:
-      log.Println(time.Now())
+      log.Println(time.Now().UnixNano())
     default:
       close(client.send)
       delete(h.clients, client)
