@@ -72,6 +72,12 @@ func main() {
 		json := trumpTower.getRoomsJson()
 		w.Write(json)
 	})
+	router.GET("/ping", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		time.Sleep(time.Second)
+		response := Response{"PING", map[string]interface{}{"time": time.Now().UnixNano()}}
+		json := responseToJson(response)
+		w.Write(json)
+	})
 
 	handler := cors.Default().Handler(router)
 	err := http.ListenAndServe(*addr, handler)
