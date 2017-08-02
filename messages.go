@@ -2,6 +2,7 @@ package main
 
 import (
   "log"
+  "time"
 )
 
 // WS MESSGES FROM FRONT END
@@ -33,6 +34,7 @@ func broadcastMessage(h *DraftHub, message []byte) {
   for client := range h.clients {
     select {
     case client.send <- message:
+      log.Println(time.Now())
     default:
       close(client.send)
       delete(h.clients, client)
