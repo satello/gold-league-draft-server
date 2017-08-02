@@ -1,5 +1,9 @@
 package main
 
+import (
+  "log"
+)
+
 // WS MESSGES FROM FRONT END
 type Message struct {
     MessageType string
@@ -34,6 +38,7 @@ func broadcastMessage(h *DraftHub, message []byte) {
       delete(h.clients, client)
     }
   }
+  log.Println("Done broadcasting")
 }
 
 // SEND MESSAGE TO A SINGLE CLIENT

@@ -34,6 +34,7 @@ func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
   d.open = true
   ticks := 30
   updateCountdown(ticks, h)
+  start := time.Now()
   nominationTicker := time.NewTicker(time.Second)
 
   loop:
@@ -42,6 +43,7 @@ func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
     case <- nominationTicker.C:
       ticks -= 1
       updateCountdown(ticks, h)
+      timeTrack(start, "from last tick to broadcasting all responses")
       if ticks < 1 {
         nominationTicker.Stop()
         // TODO handle person not nominating someone in time
@@ -58,6 +60,7 @@ func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
         d.open = false
         break loop
       }
+      start = time.Now()
     case nomination := <- d.nominationChan:
       nominationTicker.Stop()
       currentPlayer := nomination.player

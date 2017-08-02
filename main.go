@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"github.com/rs/cors"
 	"strings"
+	"time"
 )
 
 var addr = flag.String("addr", ":6565", "http service address")
@@ -20,6 +21,11 @@ func createUuid() string {
       log.Fatal(err)
   }
   return strings.Replace(string(out[:]), "\n", "", -1)
+}
+
+func timeTrack(start time.Time, name string) {
+    elapsed := time.Since(start)
+    log.Printf("%s took %s", name, elapsed)
 }
 
 func main() {

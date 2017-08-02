@@ -49,6 +49,7 @@ func updateCountdown(ticks int, h *DraftHub) {
   response := Response{"TICKER_UPDATE", map[string]interface{}{"ticks": ticks}}
   response_json := responseToJson(response)
   broadcastMessage(h, response_json)
+  log.Println("Just broadcasted")
 }
 
 func nextNomination(h *DraftHub) {
