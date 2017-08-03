@@ -97,14 +97,14 @@ type RollbackResponse struct {
   PlayerName string `json:"player"`
 }
 
-func rollbackNomination(h *DraftHub) *Player {
+func rollbackNomination(h *DraftHub) string {
   resp, err := http.Get(GOLD_LEAGUE_APP_URI + "/draft/" + h.draftId + "/rollback-nomination")
   if err != nil {
     log.Println(err)
   }
 
   if resp.StatusCode != 200 {
-    return nil
+    return ""
   }
   defer resp.Body.Close()
   body, err := ioutil.ReadAll(resp.Body)
@@ -115,6 +115,5 @@ func rollbackNomination(h *DraftHub) *Player {
   var response *RollbackResponse
   json.Unmarshal(body, &response)
 
-  p := h.players.getPlayerByName(response.PlayerName)
-  return p
+  return response.PlayerName
 }

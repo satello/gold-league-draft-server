@@ -33,7 +33,6 @@ func broadcastNewBidderNominee(bidder *Bidder, h *DraftHub) {
 }
 
 func broadcastNewPlayerNominee(player *Player, h *DraftHub) {
-  log.Println(player)
   response := Response{"NEW_PLAYER_NOMINEE", map[string]interface{}{"name": player.Name, "bid": player.bid.amount, "bidderId": player.bid.bidderId}}
   response_json := responseToJson(response)
   broadcastMessage(h, response_json)
@@ -49,7 +48,6 @@ func updateCountdown(ticks int, h *DraftHub) {
   response := Response{"TICKER_UPDATE", map[string]interface{}{"ticks": ticks}}
   response_json := responseToJson(response)
   broadcastMessage(h, response_json)
-  log.Println("Just broadcasted")
 }
 
 func nextNomination(h *DraftHub) {
@@ -65,17 +63,14 @@ func nextNomination(h *DraftHub) {
     for {
       // end draft if we nobody eligable to bid
       if !firstCycle && h.curBidderIndex == curIndex {
-        // FIXME end draft properly
-        log.Println("why is it getting here?")
+        log.Println("CANNOT FIND NEXT NOMINATOR... ENDING DRAFT")
+        h.endDraftChan <- true
         return
       }
       firstCycle = false
       nextNominator = h.biddersSlice[h.curBidderIndex]
       // if this nominator is allowed to keep drafting select them
-      log.Println(nextNominator.Name)
-      log.Println(nextNominator.Draftable)
       if nextNominator.Draftable {
-        log.Println("should be first iteration %d", h.curBidderIndex)
         break loop
       } else {
         // if current bidder not eligable go to the next one
@@ -90,14 +85,16 @@ func nextNomination(h *DraftHub) {
   }
 }
 
-func previousNomination(h *DraftHub, player *Player) {
+func previousNomination(h *DraftHub) {
   // FIXME this function pretty gross, error prone and hard to maintain
-  // no bidding cycle can currently be running
   // start with previous index
   var prevIndex int
   // take off 1 from bidder index
   h.curBidderIndex -= 1
   prevIndex = h.curBidderIndex
+
+  // use player name stored in draftState
+  player := h.players.getPlayerByName(h.draftState.CurrentPlayerName)
 
   bidder := h.biddersMap[player.bid.bidderId]
   if bidder == nil {
@@ -119,7 +116,8 @@ func previousNomination(h *DraftHub, player *Player) {
   for {
     // end draft if we nobody eligable to bid
     if !firstCycle && h.curBidderIndex == prevIndex {
-      // FIXME end draft properly
+      log.Println("CANNOT FIND NEXT NOMINATOR... ENDING DRAFT")
+      h.endDraftChan <- true
       return
     }
     firstCycle = false
@@ -152,6 +150,6 @@ func previousNomination(h *DraftHub, player *Player) {
 
   // start bid cycle
   h.startBidding <- player
-  log.Println("pause so we are g2g")
+  // FIXME race condition. Not the end of the world if it misses it though
   h.biddingCycle.pauseChan <- true
 }

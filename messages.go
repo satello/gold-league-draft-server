@@ -1,10 +1,5 @@
 package main
 
-import (
-  "log"
-  "time"
-)
-
 // WS MESSGES FROM FRONT END
 type Message struct {
     MessageType string
@@ -34,13 +29,11 @@ func broadcastMessage(h *DraftHub, message []byte) {
   for client := range h.clients {
     select {
     case client.send <- message:
-      log.Println(time.Now().UnixNano())
     default:
       close(client.send)
       delete(h.clients, client)
     }
   }
-  log.Println("Done broadcasting")
 }
 
 // SEND MESSAGE TO A SINGLE CLIENT

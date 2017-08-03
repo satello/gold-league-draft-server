@@ -21,7 +21,7 @@ type Bidder struct {
   ActiveConnection bool `json:"activeConnection"`
 
   // whether the bidder is eligable to keep drafting
-  Draftable bool
+  Draftable bool `json:"eligible"`
 }
 
 func newBidder(name string, cap int, spots int) *Bidder {

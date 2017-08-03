@@ -12,8 +12,8 @@ type BiddingCycle struct {
   // pause chan for telling cycle to pause
   pauseChan chan bool
 
-  // channel for interupting cycle
-  interuptChan chan bool
+  // channel for interupting cycle. pass a channel for callback once finished to avoid race condition
+  interuptChan chan chan bool
 
   // bool indicating if open
   open bool
@@ -24,7 +24,7 @@ func newBiddingCycle() *BiddingCycle {
 	return &BiddingCycle{
     biddingChan: make(chan *Bid),
     pauseChan: make(chan bool),
-    interuptChan: make(chan bool),
+    interuptChan: make(chan chan bool),
     open: false,
 	}
 }
@@ -76,12 +76,13 @@ func (d *BiddingCycle) getBids(player *Player, h *DraftHub) {
         biddingTicker.Stop()
         biddingTicker = time.NewTicker(time.Second)
       }
-    case interupt := <- d.interuptChan:
+    case callbackChan := <- d.interuptChan:
       log.Println("interupt bidding cycle")
-      if interupt {
-        d.open = false
-        break loop
-      }
+      biddingTicker.Stop()
+      d.open = false
+      // callback
+      callbackChan <- true
+      break loop
     }
   }
 }

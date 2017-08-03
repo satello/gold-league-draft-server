@@ -13,7 +13,7 @@ type NominationCycle struct {
   pauseChan chan bool
 
   // channel for interupting cycle
-  interuptChan chan bool
+  interuptChan chan chan bool
 
   // bool indicating if open
   open bool
@@ -24,7 +24,7 @@ func newNominationCycle() *NominationCycle {
 	return &NominationCycle{
     nominationChan: make(chan *Nomination),
     pauseChan: make(chan bool),
-    interuptChan: make(chan bool),
+    interuptChan: make(chan chan bool),
     open: false,
 	}
 }
@@ -34,7 +34,6 @@ func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
   d.open = true
   ticks := 30
   updateCountdown(ticks, h)
-  start := time.Now()
   nominationTicker := time.NewTicker(time.Second)
 
   loop:
@@ -43,7 +42,6 @@ func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
     case <- nominationTicker.C:
       ticks -= 1
       updateCountdown(ticks, h)
-      timeTrack(start, "from last tick to broadcasting all responses")
       if ticks < 1 {
         nominationTicker.Stop()
         // TODO handle person not nominating someone in time
@@ -60,7 +58,6 @@ func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
         d.open = false
         break loop
       }
-      start = time.Now()
     case nomination := <- d.nominationChan:
       nominationTicker.Stop()
       currentPlayer := nomination.player
@@ -91,12 +88,13 @@ func (d *NominationCycle) getNominee(h *DraftHub, bidderId string) {
         nominationTicker.Stop()
         nominationTicker = time.NewTicker(time.Second)
       }
-    case interupt := <- d.interuptChan:
-      log.Println("stopping....")
-      if interupt {
-        d.open = false
-        break loop
-      }
+    case callbackChan := <- d.interuptChan:
+      log.Println("interupt nomination cycle")
+      nominationTicker.Stop()
+      d.open = false
+      // callback
+      callbackChan <- true
+      break loop
     }
   }
 }
