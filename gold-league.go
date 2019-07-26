@@ -27,7 +27,7 @@ func ownerToBidder(owner *Owner) *Bidder {
 func fetchOwners() []*Owner {
   log.Println("FETCHING OWNERS")
   // fetch owners
-  resp, err := http.Get(GOLD_LEAGUE_APP_URI + "/teams")
+  resp, err := http.Get(GOLD_LEAGUE_APP_URI + "/teams?shuffle=true")
   if err != nil {
     log.Println(err)
   }
