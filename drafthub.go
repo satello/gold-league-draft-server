@@ -265,6 +265,10 @@ func (h *DraftHub) run() {
             log.Println("stopping bidding cycle...")
             h.biddingCycle.interuptChan <- h.rollbackChan
             // have to take off cur bidder index
+            if (h.curBidderIndex == 0) {
+              h.curBidderIndex = 12
+            }
+
             h.curBidderIndex -= 1
           }
         } else {

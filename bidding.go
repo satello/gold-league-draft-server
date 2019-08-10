@@ -89,8 +89,12 @@ func previousNomination(h *DraftHub) {
   // FIXME this function pretty gross, error prone and hard to maintain
   // start with previous index
   var prevIndex int
-  // take off 1 from bidder index
-  h.curBidderIndex -= 1
+  // take off 1 from bidder index. Wrap if previous index
+  if (h.curBidderIndex == 0) {
+    h.curBidderIndex = 12
+  }
+
+  h.curBidderIndex = h.curBidderIndex - 1
   prevIndex = h.curBidderIndex
 
   // use player name stored in draftState
@@ -127,7 +131,11 @@ func previousNomination(h *DraftHub) {
       break loop
     } else {
       // if current bidder not eligable go to the next one
-      h.curBidderIndex = (h.curBidderIndex - 1) % len(h.biddersSlice)
+      if (h.curBidderIndex == 0) {
+        h.curBidderIndex = 12
+      }
+
+      h.curBidderIndex = h.curBidderIndex - 1
     }
   }
 
