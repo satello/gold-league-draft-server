@@ -18,6 +18,9 @@ type Player struct {
 	// arbitrary value metric
 	Value int `json:"value"`
 
+	// redraft rank
+	RedraftRank int `json:"redraft_rank"`
+
   // current bid
   bid *Bid
 
